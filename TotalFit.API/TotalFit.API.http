@@ -1,0 +1,40 @@
+@TotalFit.API_HostAddress = http://localhost:5100
+@exercicioId = 1
+
+### 1. Listar todos os exercícios
+GET {{TotalFit.API_HostAddress}}/api/Exercicios
+Accept: application/json
+
+
+### 2. Cadastrar um exercício
+POST {{TotalFit.API_HostAddress}}/api/Exercicios
+Content-Type: application/json
+
+{
+  "nome": "Supino reto",
+  "grupoMuscular": "Peitoral",
+  "categoria": "Musculação",
+  "descricao": "Exercício para trabalhar os músculos peitorais."
+}
+
+
+### 3. Consultar um exercício pelo ID
+GET {{TotalFit.API_HostAddress}}/api/Exercicios/{{exercicioId}}
+Accept: application/json
+
+
+### 4. Atualizar um exercício
+PUT {{TotalFit.API_HostAddress}}/api/Exercicios/{{exercicioId}}
+Content-Type: application/json
+
+{
+  "nome": "Supino reto com barra",
+  "grupoMuscular": "Peitoral",
+  "categoria": "Musculação",
+  "descricao": "Exercício de força para os músculos peitorais, realizado com barra."
+}
+
+
+### 5. Excluir um exercício
+DELETE {{TotalFit.API_HostAddress}}/api/Exercicios/{{exercicioId}}
+Accept: application/json

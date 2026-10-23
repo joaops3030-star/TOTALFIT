@@ -1,0 +1,186 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b0f19">
+    <meta name="description" content="Total Fit - Gestão de alunos e treinos">
+    <title>Total Fit | Gestão Fitness</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js" defer></script>
+</head>
+<body>
+
+    <!-- TELA DE LOGIN E CADASTRO -->
+    <main id="loginView" class="auth-page">
+        <section class="auth-brand">
+            <a class="brand" href="#">
+                <span class="brand-icon">TF</span>
+                <span>TOTAL<span class="brand-accent">FIT</span></span>
+            </a>
+
+            <div class="brand-message">
+                <span class="eyebrow">GESTÃO FITNESS INTELIGENTE</span>
+                <h1>Seu treino.<br><span>Seu progresso.</span></h1>
+                <p>
+                    Gerencie alunos, acompanhe avaliações físicas
+                    e organize treinos em um só lugar.
+                </p>
+            </div>
+
+            <div class="brand-footer">
+                <span class="status-dot"></span>
+                Sua evolução começa aqui
+            </div>
+        </section>
+
+        <section class="auth-panel">
+            <div class="auth-card">
+                <div class="mobile-brand">
+                    <span class="brand-icon">TF</span>
+                    <strong>TOTAL<span class="brand-accent">FIT</span></strong>
+                </div>
+
+                <div class="auth-heading">
+                    <span class="eyebrow">BEM-VINDO AO TOTAL FIT</span>
+                    <h2 id="authTitle">Acesse sua conta</h2>
+                    <p id="authSubtitle">Entre com seus dados para continuar.</p>
+                </div>
+
+                <div class="auth-tabs" role="tablist">
+                    <button type="button" class="auth-tab active" id="loginTab" role="tab" aria-selected="true">
+                        Entrar
+                    </button>
+                    <button type="button" class="auth-tab" id="registerTab" role="tab" aria-selected="false">
+                        Criar conta
+                    </button>
+                </div>
+
+                <div id="authMessage" class="auth-message" role="status" aria-live="polite"></div>
+
+                <!-- FORMULÁRIO DE LOGIN -->
+                <form id="loginForm" class="auth-form" autocomplete="on">
+                    <div class="form-field">
+                        <label for="loginEmail">E-mail</label>
+                        <input id="loginEmail" name="email" type="email" placeholder="seuemail@exemplo.com" autocomplete="username" required>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="loginPassword">Senha</label>
+                        <input id="loginPassword" name="senha" type="password" placeholder="Digite sua senha" autocomplete="current-password" required>
+                    </div>
+
+                    <label class="remember-me" for="rememberMe">
+                        <input id="rememberMe" name="rememberMe" type="checkbox">
+                        <span>Lembrar de mim neste dispositivo</span>
+                    </label>
+
+                    <button class="primary-button" type="submit">
+                        <span class="button-label">Entrar na plataforma</span>
+                        <span aria-hidden="true">→</span>
+                    </button>
+                </form>
+
+                <!-- FORMULÁRIO DE CADASTRO -->
+                <form id="registerForm" class="auth-form" hidden>
+                    <div class="form-field">
+                        <label for="registerName">Nome completo</label>
+                        <input id="registerName" name="nome" type="text" placeholder="Seu nome" autocomplete="name" minlength="2" maxlength="100" required>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="registerEmail">E-mail</label>
+                        <input id="registerEmail" name="email" type="email" placeholder="seuemail@exemplo.com" autocomplete="email" maxlength="200" required>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="registerPassword">Senha</label>
+                        <input id="registerPassword" name="senha" type="password" placeholder="Mínimo de 8 caracteres" autocomplete="new-password" minlength="8" maxlength="100" required>
+                    </div>
+
+                    <button class="primary-button" type="submit">
+                        <span class="button-label">Criar minha conta</span>
+                        <span aria-hidden="true">→</span>
+                    </button>
+
+                    <p class="form-note">O cadastro público cria uma conta de aluno.</p>
+                </form>
+
+                <div class="auth-legal">
+                    Ao continuar, você acessa o ambiente de gestão e acompanhamento do Total Fit.
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- PAINEL PRINCIPAL (Oculto por padrão até a autenticação) -->
+    <div id="appView" class="app-shell" hidden>
+        <aside class="sidebar" id="sidebar">
+            <a class="brand sidebar-brand" href="#">
+                <span class="brand-icon">TF</span>
+                <span>TOTAL<span class="brand-accent">FIT</span></span>
+            </a>
+
+            <div class="workspace-label">MENU PRINCIPAL</div>
+
+            <nav class="navigation" aria-label="Menu principal">
+                <button class="nav-link active" data-page="dashboard">
+                    <span class="nav-icon">▦</span>
+                    <span>Visão geral</span>
+                </button>
+                <button class="nav-link" data-page="alunos">
+                    <span class="nav-icon">👥</span>
+                    <span>Alunos</span>
+                </button>
+                <button class="nav-link" data-page="treinos">
+                    <span class="nav-icon">📋</span>
+                    <span>Treinos</span>
+                </button>
+                <button class="nav-link" data-page="avaliacoes">
+                    <span class="nav-icon">📊</span>
+                    <span>Avaliações físicas</span>
+                </button>
+                <button class="nav-link" data-page="exercicios">
+                    <span class="nav-icon">💪</span>
+                    <span>Exercícios</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-bottom">
+                <button class="logout-button" id="logoutButton">
+                    <span class="nav-icon">↪</span>
+                    Sair da conta
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-area">
+            <header class="topbar">
+                <div class="breadcrumb">
+                    <span>Workspace</span>
+                    <span class="breadcrumb-separator">/</span>
+                    <strong id="breadcrumbPage">Visão geral</strong>
+                </div>
+
+                <div class="topbar-user">
+                    <div class="user-avatar" id="userAvatar">TF</div>
+                    <div class="user-details">
+                        <strong id="userName">Usuário</strong>
+                        <span id="userRole">Conta</span>
+                    </div>
+                </div>
+            </header>
+
+            <section class="content-area">
+                <div id="pageContent"></div>
+            </section>
+
+            <footer class="app-footer">
+                <span>© 2026 Total Fit</span>
+                <span>Gestão fitness em um só lugar</span>
+            </footer>
+        </main>
+    </div>
+</body>
+</html>
