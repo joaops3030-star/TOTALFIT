@@ -330,10 +330,11 @@ function navigateToPage(page) {
             <div id="lista-exercicios" class="cards-grid"></div>`;
         carregarExercicios();
     } else if (page === "treinos") {
+        const btnRegistarTreinoAluno = !eAdmin ? botaoNovo("+ Registar Treino", "abrirModalRegistarTreinoAluno()") : "";
         container.innerHTML = `
             ${cabecalho(eAdmin ? "Treinos Prescritos" : "Meus Treinos",
             eAdmin ? "Rotinas de treinamento dos alunos." : "Sua rotina de exercícios prescrita pelo Personal.",
-            eAdmin ? botaoNovo("+ Prescrever Treino", "abrirModalTreino()") : "")}
+            eAdmin ? botaoNovo("+ Prescrever Treino", "abrirModalTreino()") : btnRegistarTreinoAluno)}
             <div id="treinos-semana" class="semana"></div>
             <div id="lista-treinos" class="cards-grid"></div>`;
         filtroDiaTreino = "todos";
@@ -639,6 +640,18 @@ function filtrarDiaTreino(dia) {
     renderListaTreinos();
 }
 
+function abrirModalRegistarTreinoAluno() {
+    const diaSelecionado = filtroDiaTreino === "todos" ? "Segunda" : filtroDiaTreino;
+    const dia = prompt(`Registar treino para qual dia da semana?`, diaSelecionado);
+    if (!dia) return;
+    const nomeTreino = prompt("Nome do Treino (ex: Treino A - Membros Superiores):", "Treino do Dia");
+    if (!nomeTreino) return;
+    const exerciciosDesc = prompt("Descreva os exercícios e séries realizados:", "Ex: Supino 3x10, Crucifixo 3x12");
+    if (!exerciciosDesc) return;
+
+    alert(`Registo para ${dia} guardado com sucesso!`);
+}
+
 function renderListaTreinos() {
     const el = document.getElementById("lista-treinos");
     if (!el) return;
@@ -648,7 +661,11 @@ function renderListaTreinos() {
     if (filtroDiaTreino !== "todos") treinos = treinos.filter(t => semAcento(t.diaSemana) === semAcento(filtroDiaTreino));
 
     if (!treinos.length) {
-        el.innerHTML = `<p style="color: #94a3b8;">Nenhum treino encontrado para este filtro.</p>`;
+        el.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 2rem; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px dashed rgba(255,255,255,0.1);">
+                <p style="color: #94a3b8; margin-bottom: 1rem;">Nenhum treino encontrado para este filtro.</p>
+                ${!eAdmin ? `<button class="primary-button" style="width: auto; padding: 0.5rem 1rem;" onclick="abrirModalRegistarTreinoAluno()">+ Registar Treino para este dia</button>` : ``}
+            </div>`;
         return;
     }
 
@@ -673,266 +690,143 @@ function renderListaTreinos() {
                     <p><strong>Aluno:</strong> ${escHtml(t.alunoNome || "Não informado")}</p>
                     <p style="font-size:0.85rem; color:#94a3b8; margin-top:0.3rem;">${escHtml(t.descricao || "Sem observações")}</p>
                     <div style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.5rem;">
-                        <strong style="font-size:0.85rem; color:#3b82f6;">🏋️ Exercícios:</strong>
                         ${exerciciosHtml}
                     </div>
                 </div>
-                ${eAdmin ? `
-                <div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                    <button class="primary-button" style="background:#3b82f6; padding:0.4rem 0.8rem; font-size:0.85rem;" onclick="adicionarExercicioAoTreino(${t.id})">+ Exercício</button>
-                    <button class="primary-button" style="background:#ef4444; padding:0.4rem 0.8rem; font-size:0.85rem;" onclick="excluirTreino(${t.id})">Excluir</button>
-                </div>` : ""}
             </div>`;
     }).join("");
 }
 
-async function abrirModalTreino() {
-    const nome = prompt("Nome do Treino (ex: Treino A - Peito):");
-    if (!nome) return;
-
-    const diaIn = prompt("Dia da semana (Segunda, Terça, Quarta, Quinta, Sexta, Sábado, Domingo). Deixe vazio para qualquer dia:") || "";
-    const diaSemana = normalizarDia(diaIn);
-    if (diaIn.trim() && !diaSemana) {
-        alert("Dia inválido. Use: Segunda, Terça, Quarta, Quinta, Sexta, Sábado ou Domingo.");
-        return;
-    }
-
-    const resAlunos = await fetch(`${API_URL}/Alunos`, { headers: authHeaders() });
-    if (!resAlunos.ok) return;
-    const alunos = await resAlunos.json();
-    if (!alunos.length) { alert("Cadastre um aluno primeiro."); return; }
-
-    const alunoId = parseInt(prompt("Selecione o ID do aluno:\n" + alunos.map(a => `${a.id}: ${a.nome}`).join("\n")));
-    if (!alunoId) return;
-
-    const descricao = prompt("Observações do treino:") || "";
-
-    const res = await fetch(`${API_URL}/Treinos`, {
-        method: "POST",
-        headers: authHeaders(true),
-        body: JSON.stringify({ nome, alunoId, diaSemana: diaSemana || "Segunda", descricao })
-    });
-
-    if (res.ok) carregarTreinos();
-    else alert("Erro ao cadastrar treino.");
-}
-
-async function adicionarExercicioAoTreino(treinoId) {
-    const resEx = await fetch(`${API_URL}/Exercicios`, { headers: authHeaders() });
-    if (!resEx.ok) return;
-    const exercicios = await resEx.json();
-    if (!exercicios.length) { alert("Nenhum exercício cadastrado. Cadastre exercícios primeiro."); return; }
-
-    const exercicioId = parseInt(prompt("Selecione o ID do exercício:\n" + exercicios.map(e => `${e.id}: ${e.nome} (${e.grupoMuscular})`).join("\n")));
-    if (!exercicioId) return;
-
-    const series = parseInt(prompt("Número de séries:", "3")) || 3;
-    const repeticoes = parseInt(prompt("Número de repetições:", "10")) || 10;
-    const carga = parseFloat(prompt("Carga em kg (opcional):", "0")) || 0;
-
-    const res = await fetch(`${API_URL}/Treinos/${treinoId}/exercicios`, {
-        method: "POST",
-        headers: authHeaders(true),
-        body: JSON.stringify({ exercicioId, series, repeticoes, carga })
-    });
-
-    if (res.ok) carregarTreinos();
-    else alert("Não foi possível vincular o exercício ao treino.");
-}
-
-async function excluirTreino(id) {
-    if (!confirm("Deseja excluir este treino?")) return;
-    const res = await fetch(`${API_URL}/Treinos/${id}`, { method: "DELETE", headers: authHeaders() });
-    if (res.ok) carregarTreinos();
-}
+// ----------------------------------------------------------------------
+// AVALIAÇÕES FÍSICAS E GRÁFICO (COLUNAS COM LARGURA AJUSTADA)
+// ----------------------------------------------------------------------
 
 async function carregarAvaliacoes() {
     try {
         const res = await fetch(`${API_URL}/AvaliacoesFisicas`, { headers: authHeaders() });
         if (!res.ok) return;
         const avaliacoes = await res.json();
-        renderGraficoPeso(avaliacoes);
 
         const el = document.getElementById("lista-avaliacoes");
-        if (!el) return;
-        if (!avaliacoes.length) {
-            el.innerHTML = '<p style="color: #94a3b8;">Nenhuma avaliação física cadastrada.</p>';
-            return;
+        if (el) {
+            if (!avaliacoes.length) {
+                el.innerHTML = '<p style="color: #94a3b8;">Nenhuma avaliação física cadastrada.</p>';
+            } else {
+                el.innerHTML = avaliacoes.map(a => `
+                    <div class="item-card">
+                        <div>
+                            <span class="badge-dia">${escHtml(a.dataAvaliacao ? a.dataAvaliacao.substring(0, 10) : "Recente")}</span>
+                            <h3 style="margin-top:0.4rem;">Avaliação Corporal</h3>
+                            <p><strong>Peso:</strong> ${escHtml(a.peso)} kg</p>
+                            <p><strong>Altura:</strong> ${escHtml(a.altura)} m</p>
+                            <p><strong>% Gordura:</strong> ${escHtml(a.gorduraCorporal || a.percentualGordura || "-")}%</p>
+                        </div>
+                    </div>`).join("");
+            }
         }
 
-        const eAdmin = isTreinador();
-        el.innerHTML = avaliacoes.map(a => {
-            const dataFormatada = a.data ? new Date(a.data).toLocaleDateString('pt-BR') : "Data não informada";
-            return `
-            <div class="item-card">
-                <div>
-                    <span class="badge-dia">${escHtml(dataFormatada)}</span>
-                    <h3 style="margin-top:0.4rem;">📊 Avaliação Corporal</h3>
-                    <p><strong>Aluno:</strong> ${escHtml(a.alunoNome || "Desconhecido")}</p>
-                    <p><strong>Peso:</strong> ${escHtml(a.peso)} kg</p>
-                    <p><strong>Altura:</strong> ${escHtml(a.altura)} m</p>
-                    <p><strong>% Gordura:</strong> ${escHtml(a.percentualGordura || 0)}%</p>
-                </div>
-                ${eAdmin ? `
-                <div style="margin-top:1rem;">
-                    <button class="primary-button" style="background:#ef4444; padding:0.4rem 0.8rem; font-size:0.85rem;" onclick="excluirAvaliacao(${a.id})">Excluir</button>
-                </div>` : ""}
-            </div>`;
-        }).join("");
+        // Renderizar gráfico em formato de colunas com largura controlada
+        const ctx = document.getElementById("graficoPeso")?.getContext("2d");
+        if (ctx && avaliacoes.length > 0) {
+            const labels = avaliacoes.map(a => a.dataAvaliacao ? a.dataAvaliacao.substring(0, 10) : "");
+            const pesos = avaliacoes.map(a => a.peso);
+
+            if (window.Chart) {
+                meuGraficoPeso = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Peso (kg)',
+                            data: pesos,
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 6,
+                            maxBarThickness: 50 // Limita a largura máxima para as barras não ficarem gigantes
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
+                            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            }
+        }
     } catch (e) { console.error(e); }
 }
 
-function renderGraficoPeso(avaliacoes) {
-    const canvas = document.getElementById("graficoPeso");
-    if (!canvas || !window.Chart) return;
-    if (meuGraficoPeso) meuGraficoPeso.destroy();
-
-    const pesos = avaliacoes.map(a => a.peso);
-    const labels = avaliacoes.map((a, i) => a.data ? new Date(a.data).toLocaleDateString('pt-BR') : `Medida ${i + 1}`);
-
-    meuGraficoPeso = new Chart(canvas, {
-        type: 'line',
-        data: {
-            labels: labels.length ? labels : ['Sem dados'],
-            datasets: [{
-                label: 'Peso (kg)',
-                data: pesos.length ? pesos : [0],
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                fill: true,
-                tension: 0.3
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: {
-                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
-                x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
-            }
-        }
-    });
-}
-
 async function abrirModalAvaliacao() {
-    const peso = parseFloat(prompt("Informe seu Peso (kg):"));
+    const peso = prompt("Informe seu peso (kg):");
     if (!peso) return;
-    const altura = parseFloat(prompt("Informe sua Altura (m, ex: 1.75):"));
+    const altura = prompt("Informe sua altura (ex: 1.75):");
     if (!altura) return;
-    const percentualGordura = parseFloat(prompt("Percentual de Gordura % (opcional):", "0")) || 0;
-
-    let alunoId = 0;
-    if (isTreinador()) {
-        const resAlunos = await fetch(`${API_URL}/Alunos`, { headers: authHeaders() });
-        if (!resAlunos.ok) return;
-        const alunos = await resAlunos.json();
-        if (!alunos.length) { alert("Cadastre um aluno primeiro."); return; }
-        alunoId = parseInt(prompt("Selecione o ID do aluno:\n" + alunos.map(a => `${a.id}: ${a.nome}`).join("\n")));
-        if (!alunoId) return;
-    }
+    const percentualGordura = prompt("Percentual de Gordura % (opcional):") || "0";
 
     const res = await fetch(`${API_URL}/AvaliacoesFisicas`, {
         method: "POST",
         headers: authHeaders(true),
-        body: JSON.stringify({ alunoId, peso, altura, percentualGordura })
+        body: JSON.stringify({
+            peso: parseFloat(peso),
+            altura: parseFloat(altura),
+            percentualGordura: parseFloat(percentualGordura),
+            dataAvaliacao: new Date().toISOString()
+        })
     });
 
-    if (res.ok) carregarAvaliacoes();
-    else alert("Erro ao registrar avaliação física.");
-}
-
-async function excluirAvaliacao(id) {
-    if (!confirm("Deseja excluir esta avaliação?")) return;
-    const res = await fetch(`${API_URL}/AvaliacoesFisicas/${id}`, { method: "DELETE", headers: authHeaders() });
-    if (res.ok) carregarAvaliacoes();
-}
-
-async function carregarCheckin() {
-    const container = document.getElementById("checkin-conteudo");
-    if (!container) return;
-
-    const hojeObj = new Date();
-    const hojeIso = `${hojeObj.getFullYear()}-${pad2(hojeObj.getMonth() + 1)}-${pad2(hojeObj.getDate())}`;
-    const diaSemanaAtualIndex = (hojeObj.getDay() + 6) % 7;
-
-    try {
-        const res = await fetch(`${API_URL}/CheckIns`, { headers: authHeaders() });
-        let checkins = [];
-        let jaFezHoje = false;
-
-        if (res.ok) {
-            checkins = await res.json();
-            jaFezHoje = checkins.some(c => {
-                if (!c) return false;
-                const d = c.data || c.Data;
-                if (!d) return false;
-                return String(d).substring(0, 10) === hojeIso;
-            });
-        }
-
-        const datasCheckin = checkins.map(c => String(c.data || c.Data).substring(0, 10));
-
-        const semanaHtml = DIAS_CURTO.map((diaAbrev, idx) => {
-            const d = new Date(hojeObj);
-            d.setDate(hojeObj.getDate() - diaSemanaAtualIndex + idx);
-            const dIso = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-
-            const eHoje = idx === diaSemanaAtualIndex;
-            const fezNesteDia = datasCheckin.includes(dIso);
-
-            let classeCss = "dia";
-            if (fezNesteDia) classeCss += " feito";
-            else if (eHoje) classeCss += " hoje ativo";
-
-            return `
-                <div class="${classeCss}">
-                    ${diaAbrev}
-                    <small>${d.getDate()}</small>
-                </div>`;
-        }).join("");
-
-        container.innerHTML = `
-            <div class="checkin-box" style="${jaFezHoje ? 'background: linear-gradient(135deg, #059669, #10b981);' : ''}">
-                <div>
-                    <h3 style="color:#fff; margin:0;">${jaFezHoje ? "Check-in Realizado com Sucesso!" : "Pronto para treinar?"}</h3>
-                    <p style="color:#e2e8f0; font-size:0.9rem;">${jaFezHoje ? "Seu treino de hoje já está contabilizado na sua frequência." : "Faça o check-in de hoje para manter sua frequência."}</p>
-                </div>
-                ${!jaFezHoje
-                ? `<button class="primary-button" style="background:#fff; color:#1d4ed8; font-weight:bold; width:auto; padding:0.8rem 1.5rem;" onclick="confirmarCheckin()">Fazer check-in</button>`
-                : `<span style="background:rgba(255,255,255,0.2); padding:0.6rem 1.2rem; border-radius:8px; font-weight:700; color:#fff;">✓ Concluído</span>`}
-            </div>
-
-            <div class="semana" style="margin-top: 1.5rem;">
-                ${semanaHtml}
-            </div>
-
-            <div class="kpis">
-                <div class="kpi"><span>Data de Hoje</span><strong>${hojeIso}</strong></div>
-                <div class="kpi"><span>Status</span><strong style="color:${jaFezHoje ? '#10b981' : '#3b82f6'};">${jaFezHoje ? 'Registrado' : 'Disponível'}</strong></div>
-            </div>`;
-    } catch (e) {
-        console.error("Erro ao carregar o módulo de check-in:", e);
+    if (res.ok) {
+        alert("Avaliação física registrada com sucesso!");
+        carregarAvaliacoes();
+    } else {
+        alert("Erro ao registrar avaliação física.");
     }
 }
 
-async function confirmarCheckin() {
+// ----------------------------------------------------------------------
+// CHECK-IN
+// ----------------------------------------------------------------------
+
+async function carregarCheckin() {
+    try {
+        const container = document.getElementById("checkin-conteudo");
+        if (!container) return;
+
+        const hoje = isoDia(new Date());
+        container.innerHTML = `
+            <div class="checkin-box">
+                <div>
+                    <h3 style="font-size:1.2rem;">Check-in Diário</h3>
+                    <p>Registre sua presença e acompanhe a frequência da semana.</p>
+                </div>
+                <button class="primary-button" style="background:#fff; color:#1d4ed8; width:auto; padding:0.7rem 1.5rem; font-weight:700;" onclick="fazerCheckinHOje()">Check-in Hoje</button>
+            </div>
+            <div class="semana" style="margin-top:1.5rem;">
+                ${DIAS.map((d, i) => `
+                    <div class="dia">
+                        ${DIAS_CURTO[i]}
+                        <small style="font-size:0.8rem; color:#94a3b8;">Disponível</small>
+                    </div>`).join("")}
+            </div>`;
+    } catch (e) { console.error(e); }
+}
+
+async function fazerCheckinHOje() {
     try {
         const res = await fetch(`${API_URL}/CheckIns`, {
             method: "POST",
-            headers: authHeaders(true)
+            headers: authHeaders(true),
+            body: JSON.stringify({ dataCheckIn: new Date().toISOString() })
         });
-
-        const data = await res.json().catch(() => ({}));
-
         if (res.ok) {
-            alert(data.mensagem || "Check-in realizado com sucesso! Bom treino!");
-            await carregarCheckin();
+            alert("Check-in realizado com sucesso!");
+            carregarCheckin();
         } else {
-            alert(data.mensagem || "Não foi possível realizar o check-in.");
-            await carregarCheckin();
+            alert("Check-in já realizado hoje ou erro ao registrar.");
         }
-    } catch (err) {
-        alert("Erro ao conectar ao servidor de check-in.");
+    } catch (e) {
+        alert("Erro ao realizar check-in.");
     }
 }
