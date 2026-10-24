@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Itens de Solução/">
     <File Path="README.md" />
+    <File Path="start.bat" />
   </Folder>
   <Project Path="TotalFit.API/TotalFit.API.csproj" />
 </Solution>
